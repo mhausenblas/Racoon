@@ -2,11 +2,13 @@
 
 Racoon is a targeted crawler and explorer for open data that is typically hidden in government and corporate Web sites. 
 
+* INPUT: a seed URL and + config (doc types, crawl depth and blacklist)
+* OUTPUT: description of target 'open data' documents (PDF, Excel sheets)
 
-* INPUT: seed list of pay-level domains + config (doc types, crawl depth and blacklist)
-* OUTPUT: description of target 'open data' documents
+Usage:
 
-
+	 python racoon.py -s http://localhost/racoon-test
+	
 ## License
 
 This software is Public Domain.
