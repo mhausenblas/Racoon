@@ -17,9 +17,20 @@ If you're under MacOS, which has a [built-in Apache](http://macdevcenter.com/pub
 
 ... you should then see something like:
 
-	Starting crawl at [http://localhost/racoon-test/] ...
-	p1.html
-	p2.html
+	starting crawl at [http://localhost/racoon-test/] ...
+	{
+	'http://localhost/racoon-test/p2.html':
+		[	
+			{	'URL': 'http://localhost/racoon-test/d.pdf',
+				'size': '13055',
+				'type': 'application/pdf'
+			},
+			{	'URL': 'http://localhost/racoon-test/c.pdf',
+				'size': '13055',
+				'type': 'application/pdf'
+			}
+		]
+	}
 
 ## License
 
