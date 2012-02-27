@@ -13,13 +13,19 @@ import logging
 import getopt
 import StringIO
 from urllib2 import Request, urlopen, URLError, HTTPError
+from urlparse import urljoin
 from HTMLParser import HTMLParser
 from pprint import pprint
 import simplejson as json
+import time
+import robotparser
 
 # Racoon config
 logging.basicConfig(level=logging.DEBUG)
 DEBUG = False
+DEFAULT_POLITNESS = 0.2 # that is, wait 0.2 sec between two sub-sequent requests at a site
+
+HTML_CONTENT_TYPES = ['text/html'] # TODO: add other HTML media types
 
 class LinkExtractor(HTMLParser):
 	def __init__(self):
@@ -41,29 +47,40 @@ class LinkExtractor(HTMLParser):
 	
 	
 class RCrawler(object):
-	def __init__(self, base):
+	# init with the base URL of the site and a default politness of 1s wait between two hits
+	def __init__(self, base, politeness = 1):
 		self.base = base
 		self.seen = []
 		self.nuggets = {}
+		self.politeness = politeness
+		self.rp = robotparser.RobotFileParser()
+		self.rp.set_url("http://www.sw-app.org/robots.txt")
+		self.rp.read()
 		
 	# crawl from a seed URL
 	def crawl(self, host_loc, cur_loc):
-		if cur_loc not in self.seen: # make sure we avoid cycles
+		if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen: # we're allowed to crawl it and we're not going in circles ...
 			self.seen.append(cur_loc) # remeber what links we have already traversed
 			if DEBUG: logging.debug('visited: %s' %self.seen)
 			(headers, content) = self.get(cur_loc)
 			if headers:
 				if DEBUG: logging.debug('url: %s, type: %s, size: %s' %(cur_loc, headers['content-type'], headers['content-length']))
-				if(headers['content-type'] == 'text/html'):
+				if(self.is_html(headers['content-type'])):
+					time.sleep(self.politeness)
 					self.follow_hyperlinks(cur_loc, content)
 				else:
 					if DEBUG: logging.debug('host: %s, doc: %s' %(host_loc, cur_loc))
+					# TODO: add anchor text, title, etc.
 					try:
 						self.nuggets[host_loc].append({ 'URL' : cur_loc, 'type' : headers['content-type'] , 'size' : headers['content-length']})
 					except KeyError, e:
 						self.nuggets[host_loc] = []
 						self.nuggets[host_loc].append({ 'URL' : cur_loc, 'type' : headers['content-type'] , 'size' : headers['content-length']})
-						
+	
+	def is_html(self, content_type):
+		if content_type in HTML_CONTENT_TYPES: return True
+		else: return False
+	
 	# extract all hyperlinks (<a href='' ...>) from an HTML content and follow them recursively
 	def follow_hyperlinks(self, host_loc, content):
 		le = LinkExtractor()
@@ -72,15 +89,18 @@ class RCrawler(object):
 		if DEBUG: logging.debug('outgoing: %s' %links)
 		for link in links:
 			if DEBUG: logging.debug('checking %s' %link)
-			if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links
-				self.crawl(host_loc, self.base + link)
-				#print link
+			if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links - TODO: catch other URI schemes such as mailto:
+				logging.info('visiting: %s' %urljoin(host_loc, link))
+				self.crawl(host_loc, urljoin(host_loc, link))
 	
 
 	# dereference a URL and try to return the HTTP headers and the content 
 	def get(self, url):
 		try:
-			response = urlopen(url)
+			#response = urlopen(url)
+			req = Request(url)
+			req.add_header('User-agent', 'Racoon v0.1')
+			response = urlopen(req)
 		except HTTPError, e:
 			print 'Sorry, the server could not fulfill the request.'
 			print 'Error code: ', e.code
@@ -104,24 +124,28 @@ class RCrawler(object):
 			return encoder.encode(self.nuggets)
 	
 def usage():
-	print("Usage: python racoon.py -s {seed URL} ")
-	print("Example: python racoon.py -s http://localhost/racoon-test/")
+	print("Usage: python racoon.py -p|-j {seed URL} where -p produces a plain output and -j a JSON output.")
+	print("Example: python racoon.py -p http://localhost/racoon-test/")
 
 if __name__ == "__main__":
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hs:", ["help", "seed"])
+		opts, args = getopt.getopt(sys.argv[1:], "hp:j:", ["help", "plain", "json"])
 		for opt, arg in opts:
 			if opt in ("-h", "--help"):
 				usage()
 				sys.exit()
-			elif opt in ("-s", "--seed"):
-				print("starting crawl at [%s] ..." %arg)
+			elif opt in ("-p", "--plain"):
+				print("starting crawl with plain output at [%s] ..." %arg)
 				seed_url = arg
-				r = RCrawler(seed_url)
+				r = RCrawler(seed_url, DEFAULT_POLITNESS)
 				r.crawl(seed_url, seed_url)
 				pprint(r.desc())
-				# print r.desc(as = 'json')
-				pass
+			elif opt in ("-j", "--json"):
+				print("starting crawl with JSON output at [%s] ..." %arg)
+				seed_url = arg
+				r = RCrawler(seed_url, DEFAULT_POLITNESS)
+				r.crawl(seed_url, seed_url)
+				print r.desc(as = 'json')
 	except getopt.GetoptError, err:
 		print str(err)
 		usage()
