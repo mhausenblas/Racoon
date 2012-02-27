@@ -51,7 +51,7 @@ If you're under MacOS, which has a [built-in Apache](http://macdevcenter.com/pub
 		]
 	}
 	
-Under *nix you can also use the provided shell script `rr` (short for run racoon), like so:
+Under *nix you can also use the provided shell script [`rr`](https://github.com/mhausenblas/Racoon/blob/master/rr) (short for run racoon), like so:
 
 	 ./rr http://localhost/racoon-test/ r.json
 
