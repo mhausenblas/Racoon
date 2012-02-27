@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
 """ 
-  Takes  a seed HTTP URI, crawls the HTML within the pay-level domain and generates a description of target 'open data' documents (such as PDFs or Excel sheets.)
+  Takes  a seed HTTP URI, crawls the HTML within the pay-level domain 
+  and generates a description of target 'open data' documents 
+  (such as PDFs or Excel sheets).
 
 @author: Michael Hausenblas, http://sw-app.org/mic.xhtml#i
 @since: 2012-02-20
@@ -13,7 +15,7 @@ import logging
 import getopt
 import StringIO
 from urllib2 import Request, urlopen, URLError, HTTPError
-from urlparse import urljoin
+from urlparse import urljoin, urlparse
 from HTMLParser import HTMLParser
 from pprint import pprint
 import simplejson as json
@@ -24,8 +26,8 @@ import robotparser
 logging.basicConfig(level=logging.DEBUG)
 DEBUG = False
 DEFAULT_POLITNESS = 0.2 # that is, wait 0.2 sec between two sub-sequent requests at a site
-
-HTML_CONTENT_TYPES = ['text/html'] # TODO: add other HTML media types
+HTML_CONTENT_TYPES = ['text/html', 'application/xhtml+xml'] # based on http://www.whatwg.org/specs/web-apps/current-work/multipage/iana.html
+EXCLUDED_URI_REFS = ['mailto', 'ftp']
 
 class LinkExtractor(HTMLParser):
 	def __init__(self):
@@ -54,12 +56,13 @@ class RCrawler(object):
 		self.nuggets = {}
 		self.politeness = politeness
 		self.rp = robotparser.RobotFileParser()
-		self.rp.set_url("http://www.sw-app.org/robots.txt")
+		self.rp.set_url(urljoin(self.base, 'robots.txt'))
 		self.rp.read()
 		
 	# crawl from a seed URL
 	def crawl(self, host_loc, cur_loc):
-		if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen: # we're allowed to crawl it and we're not going in circles ...
+		# we're allowed to crawl it (as of robots.txt) and we're not going in circles and ignore schemes such as mailto: and ftp:
+		if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen and not urlparse(cur_loc).scheme in EXCLUDED_URI_REFS: 
 			self.seen.append(cur_loc) # remeber what links we have already traversed
 			if DEBUG: logging.debug('visited: %s' %self.seen)
 			(headers, content) = self.get(cur_loc)
@@ -89,10 +92,11 @@ class RCrawler(object):
 		if DEBUG: logging.debug('outgoing: %s' %links)
 		for link in links:
 			if DEBUG: logging.debug('checking %s' %link)
-			if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links - TODO: catch other URI schemes such as mailto:
-				logging.info('visiting: %s' %urljoin(host_loc, link))
+			if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links 
+				logging.info('checking: %s' %urljoin(host_loc, link))
 				self.crawl(host_loc, urljoin(host_loc, link))
-	
+			else:
+				logging.info('ignoring: %s' %link)
 
 	# dereference a URL and try to return the HTTP headers and the content 
 	def get(self, url):
