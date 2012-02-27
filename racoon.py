@@ -33,17 +33,30 @@ class LinkExtractor(HTMLParser):
 	def __init__(self):
 		HTMLParser.__init__(self)
 		self.links = []
+		self.link_text = {}
+		self.is_link = False
+		self.current_link = ''
 	
 	def handle_starttag(self, tag, attrs):
 		if tag != 'a':
 			return
+		self.is_link = True
 		for name, value in attrs:
 			if name == 'href':
 				self.links.append(value)
+				self.current_link = value
 				break
 			else:
 				return
 
+	def handle_data(self, data):
+		if self.is_link:
+			#if DEBUG: logging.debug("link text: %s" %data)
+			self.link_text[self.current_link] = data
+
+	def handle_endtag(self, tag):
+		self.is_link = False
+			
 	def get_links(self):
 		return self.links
 	
@@ -61,7 +74,7 @@ class RCrawler(object):
 		
 	# crawl from a seed URL
 	def crawl(self, host_loc, cur_loc):
-		# we're allowed to crawl it (as of robots.txt) and we're not going in circles and ignore schemes such as mailto: and ftp:
+		# check if we're allowed to crawl it (as of robots.txt) and we're not going in circles and ignore schemes such as mailto: and ftp:
 		if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen and not urlparse(cur_loc).scheme in EXCLUDED_URI_REFS: 
 			self.seen.append(cur_loc) # remeber what links we have already traversed
 			if DEBUG: logging.debug('visited: %s' %self.seen)
@@ -83,6 +96,7 @@ class RCrawler(object):
 	def is_html(self, content_type):
 		if content_type in HTML_CONTENT_TYPES: return True
 		else: return False
+	
 	
 	# extract all hyperlinks (<a href='' ...>) from an HTML content and follow them recursively
 	def follow_hyperlinks(self, host_loc, content):
