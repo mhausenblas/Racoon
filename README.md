@@ -18,30 +18,34 @@ If you're under MacOS, which has a [built-in Apache](http://macdevcenter.com/pub
 ... you should then see something like:
 	
 	starting crawl with plain output at [http://localhost/racoon-test/] ...
-	INFO:root:visiting: http://localhost/racoon-test/p1.html
-	INFO:root:visiting: http://localhost/racoon-test/index.html
-	INFO:root:visiting: http://localhost/racoon-test/p1.html
-	INFO:root:visiting: http://localhost/racoon-test/p2.html
-	INFO:root:visiting: http://localhost/racoon-test/d.pdf
-	INFO:root:visiting: http://localhost/racoon-test/c.pdf
-	INFO:root:visiting: http://localhost/racoon-test/sub-dir-1/p3.html
-	INFO:root:visiting: http://localhost/racoon-test/sub-dir-1/e.pdf
-	INFO:root:visiting: http://localhost/racoon-test/p2.html
-	{
+	INFO:root:checking: http://localhost/racoon-test/p1.html
+	INFO:root:checking: http://localhost/racoon-test/index.html
+	INFO:root:checking: http://localhost/racoon-test/p1.html
+	INFO:root:checking: http://localhost/racoon-test/p2.html
+	INFO:root:checking: http://localhost/racoon-test/d.pdf
+	INFO:root:checking: http://localhost/racoon-test/c.pdf
+	INFO:root:checking: http://localhost/racoon-test/sub-dir-1/p3.html
+	INFO:root:checking: http://localhost/racoon-test/sub-dir-1/e.pdf
+	INFO:root:ignoring: http://www.wikipedia.org/
+	INFO:root:checking: mailto:abc@def.com
+	INFO:root:checking: http://localhost/racoon-test/p2.html	{
 		'http://localhost/racoon-test/p2.html':
 		[
 			{	'URL': 'http://localhost/racoon-test/d.pdf',
 				'size': '13055',
+				'text': 'document d',
 				'type': 'application/pdf'
 			},
 			{	'URL': 'http://localhost/racoon-test/c.pdf',
 				'size': '13055',
+				'text': 'document c',
 				'type': 'application/pdf'}
 		],
 		'http://localhost/racoon-test/sub-dir-1/p3.html': 
 		[
 			{	'URL': 'http://localhost/racoon-test/sub-dir-1/e.pdf',
 				'size': '13055',
+				'text': 'document e',
 				'type': 'application/pdf'
 			}
 		]
