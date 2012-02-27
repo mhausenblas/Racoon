@@ -1,0 +1,6 @@
+#!/bin/bash
+START=$(date +%s)
+python racoon.py -j $1 > $2
+END=$(date +%s)
+DIFF=$(( $END - $START ))
+echo "It took $DIFF seconds"

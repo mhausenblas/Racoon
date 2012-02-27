@@ -26,6 +26,7 @@ import robotparser
 logging.basicConfig(level=logging.DEBUG)
 DEBUG = False
 DEFAULT_POLITNESS = 0.2 # that is, wait 0.2 sec between two sub-sequent requests at a site
+LIMIT = 10 # visit only LIMIT pages
 HTML_CONTENT_TYPES = ['text/html', 'application/xhtml+xml'] # based on http://www.whatwg.org/specs/web-apps/current-work/multipage/iana.html
 EXCLUDED_URI_REFS = ['mailto', 'ftp']
 
@@ -42,25 +43,28 @@ class RCrawler(object):
 	
 	# crawl from a seed URL
 	def crawl(self, host_loc, cur_loc, link_text=''):
-		# check if we're allowed to crawl it (as of robots.txt) and we're not going in circles and ignore schemes such as mailto: and ftp:
-		if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen and not urlparse(cur_loc).scheme in EXCLUDED_URI_REFS: 
-			self.seen.append(cur_loc) # remeber what links we have already traversed
-			if DEBUG: logging.debug('visited: %s' %self.seen)
-			(headers, content) = self.get(cur_loc)
-			if headers:
-				if DEBUG: logging.debug('url: %s, type: %s, size: %s' %(cur_loc, headers['content-type'], headers['content-length']))
-				if(self.is_html(headers['content-type'])):
-					time.sleep(self.politeness)
-					self.follow_hyperlinks(cur_loc, content)
-				else:
-					if DEBUG: logging.debug('host: %s, doc: %s' %(host_loc, cur_loc))
-					if link_text: lt = link_text
-					else: lt = ''
-					try:
-						self.nuggets[host_loc].append({ 'URL' : cur_loc, 'text' : lt, 'type' : headers['content-type'] , 'size' : headers['content-length']})
-					except KeyError, e:
-						self.nuggets[host_loc] = []
-						self.nuggets[host_loc].append({ 'URL' : cur_loc, 'text' : lt, 'type' : headers['content-type'] , 'size' : headers['content-length']})
+		if DEBUG: logging.debug('link count: %s' %len(self.seen))
+		if len(self.seen) < LIMIT:
+			# check if we're allowed to crawl it (as of robots.txt) and we're not going in circles and ignore schemes such as mailto: and ftp:
+			if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen and not urlparse(cur_loc).scheme in EXCLUDED_URI_REFS: 
+				self.seen.append(cur_loc) # remeber what links we have already traversed
+				if DEBUG: logging.debug('visited: %s' %self.seen)
+				(headers, content) = self.get(cur_loc)
+				if headers:
+					if DEBUG: logging.debug('url: %s, type: %s, size: %s' %(cur_loc, headers['content-type'], headers['content-length']))
+					if(self.is_html(headers['content-type'])):
+						time.sleep(self.politeness)
+						self.follow_hyperlinks(cur_loc, content)
+					else:
+						if DEBUG: logging.debug('host: %s, doc: %s' %(host_loc, cur_loc))
+						if link_text: lt = link_text
+						else: lt = ''
+						try:
+							self.nuggets[host_loc].append({ 'URL' : cur_loc, 'text' : lt, 'type' : headers['content-type'] , 'size' : headers['content-length']})
+						except KeyError, e:
+							self.nuggets[host_loc] = []
+							self.nuggets[host_loc].append({ 'URL' : cur_loc, 'text' : lt, 'type' : headers['content-type'] , 'size' : headers['content-length']})
+		else: return
 	
 	# check if we're really dealing with an HTML media type
 	def is_html(self, content_type):
@@ -90,12 +94,12 @@ class RCrawler(object):
 			req.add_header('User-agent', 'Racoon v0.1')
 			response = urlopen(req)
 		except HTTPError, e:
-			print 'Sorry, the server could not fulfill the request.'
-			print 'Error code: ', e.code
+			if DEBUG: logging.debug('Sorry, the server could not fulfill the request.')
+			if DEBUG: logging.debug('Error code: %s ' %e.code)
 			return (None, e.code)
 		except URLError, e:
-			print 'Sorry, seems we failed to reach a server.'
-			print 'Reason: ', e.reason
+			if DEBUG: logging.debug('Sorry, seems we failed to reach a server.')
+			if DEBUG: logging.debug('Reason: %s ' %e.reason)
 			return (None, e.reason)
 		else:
 			content = response.read() 
@@ -130,7 +134,6 @@ if __name__ == "__main__":
 				print("result:")
 				pprint(r.desc())
 			elif opt in ("-j", "--json"):
-				print("starting crawl with JSON output at [%s] ..." %arg)
 				seed_url = arg
 				r = RCrawler(seed_url, DEFAULT_POLITNESS)
 				r.crawl(seed_url, seed_url)

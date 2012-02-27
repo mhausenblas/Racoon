@@ -50,6 +50,14 @@ If you're under MacOS, which has a [built-in Apache](http://macdevcenter.com/pub
 			}
 		]
 	}
+	
+Under *nix you can also use the provided shell script `rr` (short for run racoon), like so:
+
+	 ./rr http://localhost/racoon-test/ r.json
+
+... which will store the crawl results in the file `r.json` and provide you with an overall execution time report.
+
+If you want to, you can restrict the number of pages to be visited by setting the `LIMIT` variable in [`racoon.py`](https://github.com/mhausenblas/Racoon/blob/master/racoon.py).
 
 ## License
 
