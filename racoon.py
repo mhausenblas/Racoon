@@ -25,6 +25,7 @@ import robotparser
 # Racoon config
 logging.basicConfig(level=logging.DEBUG)
 DEBUG = False
+DEFAULT_STRATEGY = 'breadth' # change to 'depth' if you prefer a depth-first crawl over a breadth-first crawl
 DEFAULT_POLITNESS = 0.1 # that is, wait 0.2 sec between two sub-sequent requests at a site
 LIMIT = -1 # visit only LIMIT pages - if you want to crawl without limits, set to -1
 HTML_CONTENT_TYPES = ['text/html', 'application/xhtml+xml'] # based on http://www.whatwg.org/specs/web-apps/current-work/multipage/iana.html
@@ -42,17 +43,26 @@ class RCrawler(object):
 		self.rp.read()
 	
 	# crawl from a seed URL
-	def crawl(self, host_loc, cur_loc, link_text='', limit = LIMIT):
+	def crawl(self, host_loc, cur_loc, link_text='', limit=LIMIT, strategy=DEFAULT_STRATEGY):
 		if limit > 0:
-			if len(self.seen) <= LIMIT:
-				if DEBUG: logging.debug('link count: %s' %len(self.seen))
-				self.fetch_extract(host_loc, cur_loc, link_text, limit)
-			else: return
+			if strategy == 'breadth':
+				if len(self.seen) <= LIMIT:
+					if DEBUG: logging.debug('link count: %s' %len(self.seen))
+					self.breadth_first(host_loc, cur_loc, link_text, limit)
+				else: return
+			else:
+				if len(self.seen) <= LIMIT:
+					if DEBUG: logging.debug('link count: %s' %len(self.seen))
+					self.breadth_first(host_loc, cur_loc, link_text, limit)
+				else: return
 		else:
-			self.fetch_extract(host_loc, cur_loc, link_text, limit)
+			if strategy == 'breadth':
+				self.breadth_first(host_loc, cur_loc, link_text, limit)
+			else:
+				self.depth_first(host_loc, cur_loc, link_text, limit)
 	
-	# fetches from location, extracts hyperlinks and recursively crawls them
-	def fetch_extract(self, host_loc, cur_loc, link_text='', limit = LIMIT):
+	# breadth first crawl: fetches from location, extract all nuggets and then extracts hyperlinks and recursively crawl them
+	def breadth_first(self, host_loc, cur_loc, link_text='', limit = LIMIT):
 		# check if we're allowed to crawl it (as of robots.txt) and we're not going in circles and ignore schemes such as mailto: and ftp:
 		if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen and not urlparse(cur_loc).scheme in EXCLUDED_URI_REFS: 
 			self.seen.append(cur_loc) # remeber what links we have already traversed
@@ -68,7 +78,53 @@ class RCrawler(object):
 				except:
 					cl = 'unknown'
 				logging.info('currently looking at url: %s, type: %s, size: %s' %(cur_loc, ct, cl))
-				if(self.is_html(ct)): # another HTML page, recursively crawl
+				time.sleep(self.politeness)
+				(links, links_text) = self.extract_hyperlinks(cur_loc, content, limit)
+				# first get all the nuggets from the current location
+				for link in links:
+					if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links 
+						nugget = urljoin(cur_loc, link)
+						(headers, content) = self.get(nugget)
+						if headers:
+							try:
+								ct = headers['content-type']
+							except:
+								ct = 'unknown'
+							try:
+								cl = headers['content-length']
+							except:
+								cl = 'unknown'
+							if not self.is_html(ct):  # potentially found a nugget, add to list
+								logging.info('adding nugget: %s from page: %s' %(nugget, host_loc))
+								lt = links_text[link]
+								try:
+									self.nuggets[cur_loc].append({ 'URL' : nugget, 'text' : lt, 'type' : ct , 'size' : cl})
+								except KeyError, e:
+									self.nuggets[cur_loc] = []
+									self.nuggets[cur_loc].append({ 'URL' : nugget, 'text' : lt, 'type' : ct , 'size' : cl})
+				# ... and now crawl the rest of the site-internal hyperlinks
+				for link in links:
+					if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links 
+						self.breadth_first(host_loc, urljoin(host_loc, link), links_text[link], limit)
+	
+	# depth first crawl: fetches from location, extracts hyperlinks, recursively crawl them and then extract nuggets
+	def depth_first(self, host_loc, cur_loc, link_text='', limit = LIMIT):
+		# check if we're allowed to crawl it (as of robots.txt) and we're not going in circles and ignore schemes such as mailto: and ftp:
+		if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen and not urlparse(cur_loc).scheme in EXCLUDED_URI_REFS: 
+			self.seen.append(cur_loc) # remeber what links we have already traversed
+			if DEBUG: logging.debug('visited: %s' %self.seen)
+			(headers, content) = self.get(cur_loc)
+			if headers:
+				try:
+					ct = headers['content-type']
+				except:
+					ct = 'unknown'
+				try:
+					cl = headers['content-length']
+				except:
+					cl = 'unknown'
+				logging.info('currently looking at url: %s, type: %s, size: %s' %(cur_loc, ct, cl))
+				if self.is_html(ct): # we are on an HTML page, so recursively crawl
 					time.sleep(self.politeness)
 					self.follow_hyperlinks(cur_loc, content, limit)
 				else: # potentially found a nugget, add to list
@@ -86,6 +142,16 @@ class RCrawler(object):
 		if content_type in HTML_CONTENT_TYPES: return True
 		else: return False
 	
+	# extract all hyperlinks (<a href='' ...>) from an HTML content and return as list
+	def extract_hyperlinks(self, host_loc, content, limit):
+		links = []
+		links_text = {}
+		for link in BeautifulSoup(content, parseOnlyThese=SoupStrainer('a')):
+			if link.has_key('href'):
+				links.append(link['href'])
+				links_text[link['href']] = link.renderContents()
+		return (links, links_text)
+		
 	# extract all hyperlinks (<a href='' ...>) from an HTML content and follow them recursively
 	def follow_hyperlinks(self, host_loc, content, limit):
 		links = []
