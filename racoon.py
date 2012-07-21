@@ -317,7 +317,7 @@ if __name__ == "__main__":
 			pprint(r.desc())
 		else:
 			fn = datetime.datetime.now().isoformat()
-			ds_file = open('crawl-result-' + fn.replace(':', '-').replace('.', '-') + '.js', 'w')
+			ds_file = open('crawl-result-' + fn.replace(':', '-').replace('.', '-') + '.json', 'w')
 			ds_file.write(r.desc(format = 'json'))
 			ds_file.close()
 		

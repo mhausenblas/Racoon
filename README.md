@@ -7,11 +7,11 @@ Racoon is a targeted crawler and explorer for open data that is typically hidden
 
 ## Usage
 
-	python racoon.py -p http://example.com/start/
+	python racoon.py -s http://example.com/start/
 
-	python racoon.py -p http://example.com/start/ -f json
+	python racoon.py -s http://example.com/start/ -f json
 	
-	python racoon.py -p http://example.com/start/ -f json -c depth -p 0.3 -v
+	python racoon.py -s http://example.com/start/ -f json -c depth -p 0.3 -v
 
 ## Crawl parameters
 
