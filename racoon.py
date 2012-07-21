@@ -20,6 +20,7 @@ from BeautifulSoup import BeautifulSoup, SoupStrainer
 from pprint import pprint
 import simplejson as json
 import time
+import datetime
 import robotparser
 
 # Racoon config
@@ -315,7 +316,10 @@ if __name__ == "__main__":
 			print("result:")
 			pprint(r.desc())
 		else:
-			print r.desc(format = 'json')
+			fn = datetime.datetime.now().isoformat()
+			ds_file = open('crawl-result-' + fn.replace(':', '-').replace('.', '-') + '.js', 'w')
+			ds_file.write(r.desc(format = 'json'))
+			ds_file.close()
 		
 	except getopt.GetoptError, err:
 		print str(err)
