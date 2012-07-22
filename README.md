@@ -7,13 +7,36 @@ Racoon is a targeted crawler and explorer for open data that is typically hidden
 
 ## Usage
 
+The only thing Racoon really needs to know is where to start the crawl, hence you MUST supply the seed URL via the `-s` parameter, all the other parameters are optional (see below for their meaning and allowed values). So, a minimal way to crawl a site would be:
+
 	python racoon.py -s http://example.com/start/
+
+If you fancy storing the result of the crawl in a file, use the `-f` parameter set to `json` like so:
 
 	python racoon.py -s http://example.com/start/ -f json
 	
-	python racoon.py -s http://example.com/start/ -f json -c depth -p 0.3 -v
+You can also change the crawl frequency also known as politeness (that is, the time Racoon will wait between two subsequent HTTP requests) using the `-p` parameter and supplying a numerical value in seconds (below: wait 0.3 sec) as well as get a bit more details what is going on during the crawl using the `-v` parameter, meaning Racoon is supposed to be verbose:
+
+	python racoon.py -s http://example.com/start/ -f json -p 0.3 -v
+
+
+
+### Examples
+At the wiki ...
+
+
+### Shell script
+
+Under *nix you can also use the provided shell script [`rr`](https://github.com/mhausenblas/Racoon/blob/master/rr) (short for run racoon), like so:
+
+	 ./rr  http://example.com/start/
+
+... which will store the crawl results in a file called something like `crawl-result-2012-07-21T18-48-33-406027.json` in the directory where you run the script as well as provide you with information about the overall execution time.
+
 
 ## Crawl parameters
+
+Racoon takes the following parameters as command line options:
 
 	-s or --seed		...	REQUIRED: specifies the seed URL to start the crawl from"
 
@@ -22,67 +45,61 @@ Racoon is a targeted crawler and explorer for open data that is typically hidden
 							 valid JSON document in the current directory that reads something like
 							 'crawl-result-2012-07-21T18-48-33-406027.json')
 
-	-c or --crawl		...	OPTIONAL: sets crawl strategy, allowed values are 'breadth' or 'depth' 
-							(defaults to breadth-first, i.e., all nuggets from a page are extracted,
-		 					 then links are followed; depth-first is the other way round ;)
-
-	-l or --limit		...	OPTIONAL: sets crawl limit, allowed are values >0
+	-l or --limit		...	OPTIONAL: sets crawl limit, allowed are values greater 0
 							(defaults to no limits, that is, follow all available links within the website)
 
-	-p or --politeness	...	OPTIONAL: sets the crawl frequency aka politeness
+	-p or --politeness	...	OPTIONAL: sets the crawl frequency aka politeness, allowed are values greater MIN_POLITNESS 
 							(defaults to 0.1 sec between two subsequent requests at a site)
 
 	-v or --verbose		...	OPTIONAL: provide detailed logs of what is happening
+
+Note: if you know what you're doing, you can change the minimal allowed request frequency (aka politeness) in [`racoon.py`](https://github.com/mhausenblas/Racoon/blob/master/racoon.py) by changing `MIN_POLITNESS`.
+
 
 ## Local testing
 
 If you're under MacOS, which has a [built-in Apache](http://macdevcenter.com/pub/a/mac/2001/12/07/apache.html "Apache Web-Serving with Mac OS X: Part 1 - O'Reilly Media"), just copy the `racoon-test` directory to `/Library/Webserver/Documents/` and run:
 
-	python racoon.py -s http://localhost/racoon-test
+	python racoon.py -s http://localhost/racoon-test/
 
 ... you should then see something like:
 	
-	starting crawl with plain output at [http://localhost/racoon-test/] ...
-	INFO:root:checking: http://localhost/racoon-test/p1.html
-	INFO:root:checking: http://localhost/racoon-test/index.html
-	INFO:root:checking: http://localhost/racoon-test/p1.html
-	INFO:root:checking: http://localhost/racoon-test/p2.html
-	INFO:root:checking: http://localhost/racoon-test/d.pdf
-	INFO:root:checking: http://localhost/racoon-test/c.pdf
-	INFO:root:checking: http://localhost/racoon-test/sub-dir-1/p3.html
-	INFO:root:checking: http://localhost/racoon-test/sub-dir-1/e.pdf
-	INFO:root:ignoring: http://www.wikipedia.org/
-	INFO:root:checking: mailto:abc@def.com
-	INFO:root:checking: http://localhost/racoon-test/p2.html	{
-		'http://localhost/racoon-test/p2.html':
-		[
-			{	'URL': 'http://localhost/racoon-test/d.pdf',
-				'size': '13055',
-				'text': 'document d',
-				'type': 'application/pdf'
-			},
-			{	'URL': 'http://localhost/racoon-test/c.pdf',
-				'size': '13055',
-				'text': 'document c',
-				'type': 'application/pdf'}
-		],
-		'http://localhost/racoon-test/sub-dir-1/p3.html': 
-		[
-			{	'URL': 'http://localhost/racoon-test/sub-dir-1/e.pdf',
-				'size': '13055',
-				'text': 'document e',
-				'type': 'application/pdf'
-			}
-		]
-	}
-	
-Under *nix you can also use the provided shell script [`rr`](https://github.com/mhausenblas/Racoon/blob/master/rr) (short for run racoon), like so:
+	================================================================================
+	Starting crawl at seed URL: http://localhost/racoon-test/
+	================================================================================
+	2012-07-22T12:29:34 At URL http://localhost/racoon-test/ with media type [text/html] and [162 bytes] content length
+	2012-07-22T12:29:34 No nuggets found at http://localhost/racoon-test/, now following further links ...
+	2012-07-22T12:29:34 At URL http://localhost/racoon-test/p1.html with media type [text/html] and [346 bytes] content length
+	2012-07-22T12:29:35 Added 1 nugget(s) from http://localhost/racoon-test/p1.html, now following further links ...
+	2012-07-22T12:29:35 At URL http://localhost/racoon-test/index.html with media type [text/html] and [162 bytes] content length
+	2012-07-22T12:29:36 No nuggets found at http://localhost/racoon-test/index.html, now following further links ...
+	2012-07-22T12:29:36 At URL http://localhost/racoon-test/p2.html with media type [text/html] and [142 bytes] content length
+	2012-07-22T12:29:36 Added 2 nugget(s) from http://localhost/racoon-test/p2.html, now following further links ...
+	2012-07-22T12:29:36 At URL http://localhost/racoon-test/p4.html with media type [text/html] and [210 bytes] content length
+	2012-07-22T12:29:36 No nuggets found at http://localhost/racoon-test/p4.html, now following further links ...
+	2012-07-22T12:29:36 At URL http://localhost/racoon-test/sub-dir-1/p3.html with media type [text/html] and [111 bytes] content length
+	2012-07-22T12:29:37 Added 1 nugget(s) from http://localhost/racoon-test/sub-dir-1/p3.html, now following further links ...
+	================================================================================
+	Crawl completed with 10 locations seen in total and found nuggets in 3 locations.
+	Result:
 
-	 ./rr http://localhost/racoon-test/
+	{u'http://localhost/racoon-test/p1.html': [{'URL': u'http://localhost/racoon-test/d.pdf',
+	                                            'size': '13055',
+	                                            'text': 'document d',
+	                                            'type': 'application/pdf'}],
+	 u'http://localhost/racoon-test/p2.html': [{'URL': u'http://localhost/racoon-test/d.pdf',
+	                                            'size': '13055',
+	                                            'text': 'document d',
+	                                            'type': 'application/pdf'},
+	                                           {'URL': u'http://localhost/racoon-test/c.pdf',
+	                                            'size': '13055',
+	                                            'text': 'document c',
+	                                            'type': 'application/pdf'}],
+	 u'http://localhost/racoon-test/sub-dir-1/p3.html': [{'URL': u'http://localhost/racoon-test/sub-dir-1/e.pdf',
+	                                                      'size': '13055',
+	                                                      'text': 'document e',
+	                                                      'type': 'application/pdf'}]}
 
-... which will store the crawl results in a file called something like `crawl-result-2012-07-21T18-48-33-406027.json` in the directory where you run the script as well as provide you with information about the overall execution time.
-
-Note: if you know what you're doing, you can change the minimal allowed request frequency (aka politeness) in [`racoon.py`](https://github.com/mhausenblas/Racoon/blob/master/racoon.py) by changing `MIN_POLITNESS`.
 
 ## Dependencies
 
