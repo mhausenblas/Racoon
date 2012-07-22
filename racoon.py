@@ -180,6 +180,11 @@ class RCrawler(object):
 			if headers:
 				try:
 					ct = headers['content-type']
+					# in case there is an additional parameter such as the character set specified
+					# ignore it, for example, 'text/html;charset=UTF-8' -> 'text/html'
+					# see also http://tools.ietf.org/html/rfc2616#section-14.17
+					if ';' in ct:
+						ct = ct.split(';')[0]
 				except:
 					ct = 'unknown'
 				try:
