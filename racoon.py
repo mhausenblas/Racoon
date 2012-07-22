@@ -24,8 +24,14 @@ import datetime
 import robotparser
 
 # Racoon config
-logging.basicConfig(level=logging.DEBUG)
 DEBUG = False
+
+if DEBUG:
+	FORMAT = '%(asctime)-0s %(levelname)s %(message)s [at line %(lineno)d]'
+else:
+	FORMAT = '%(asctime)-0s %(message)s'
+	
+logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt='%Y-%m-%dT%I:%M:%S')
 
 DEFAULT_STRATEGY = 'breadth' # change to 'depth' if you prefer a depth-first crawl over a breadth-first crawl
 DEFAULT_POLITNESS = 0.2 # that is, wait 0.2 sec between two sub-sequent requests at a site
@@ -83,7 +89,7 @@ class RCrawler(object):
 					cl = headers['content-length']
 				except:
 					cl = 'unknown'
-				logging.info('currently looking at url: %s, type: %s, size: %s' %(cur_loc, ct, cl))
+				logging.info('At URL %s with media type %s and %s bytes content length' %(cur_loc, ct, cl))
 				time.sleep(self.politeness)
 				(links, links_text) = self.extract_hyperlinks(cur_loc, content, limit)
 				# first get all the nuggets from the current location
@@ -101,7 +107,7 @@ class RCrawler(object):
 							except:
 								cl = 'unknown'
 							if not self.is_html(ct):  # potentially found a nugget, add to list
-								logging.info('adding nugget: %s from page: %s' %(nugget, host_loc))
+								logging.info('- adding nugget %s (from %s)' %(nugget, host_loc))
 								lt = links_text[link]
 								try:
 									self.nuggets[cur_loc].append({ 'URL' : nugget, 'text' : lt, 'type' : ct , 'size' : cl})
@@ -110,8 +116,11 @@ class RCrawler(object):
 									self.nuggets[cur_loc].append({ 'URL' : nugget, 'text' : lt, 'type' : ct , 'size' : cl})
 				# ... and now crawl the rest of the site-internal hyperlinks
 				for link in links:
-					if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links 
+					if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links
+						logging.info('- considering relative link %s resolving to %s' %(link, urljoin(host_loc, link)))
 						self.breadth_first(host_loc, urljoin(host_loc, link), links_text[link], limit)
+					else:
+						logging.info('- ignoring outgoing link %s' %link)
 	
 	# depth first crawl: fetches from location, extracts hyperlinks, recursively crawl them and then extract nuggets
 	def depth_first(self, host_loc, cur_loc, link_text='', limit = LIMIT):
@@ -129,14 +138,14 @@ class RCrawler(object):
 					cl = headers['content-length']
 				except:
 					cl = 'unknown'
-				logging.info('currently looking at url: %s, type: %s, size: %s' %(cur_loc, ct, cl))
+				logging.info('At URL %s with media type %s and %s bytes content length' %(cur_loc, ct, cl))
 				if self.is_html(ct): # we are on an HTML page, so recursively crawl
 					time.sleep(self.politeness)
 					self.follow_hyperlinks(cur_loc, content, limit)
 				else: # potentially found a nugget, add to list
 					if link_text: lt = link_text
 					else: lt = ''
-					logging.info('adding nugget: %s from page: %s' %(cur_loc, host_loc))
+					logging.info('- adding nugget %s (from %s)' %(cur_loc, host_loc))
 					try:
 						self.nuggets[host_loc].append({ 'URL' : cur_loc, 'text' : lt, 'type' : ct , 'size' : cl})
 					except KeyError, e:
@@ -168,10 +177,10 @@ class RCrawler(object):
 				links_text[link['href']] = link.renderContents()
 				if DEBUG: logging.debug('checking %s' %link)
 				if not link['href'].startswith('http://'): # stay in the domain, only relative links, no outbound links 
-					logging.info('considering relative link %s resolving to %s' %(link['href'], urljoin(host_loc, link['href'])))
-					self.crawl(host_loc, urljoin(host_loc, link['href']), links_text[link['href']], limit)
+					logging.info('- considering relative link %s resolving to %s' %(link['href'], urljoin(host_loc, link['href'])))
+					self.depth_first(host_loc, urljoin(host_loc, link['href']), links_text[link['href']], limit)
 				else:
-					logging.info('ignoring outgoing: %s' %link['href'])
+					logging.info('- ignoring outgoing link %s' %link['href'])
 	
 	# dereference a URL and try to return the HTTP headers and the content 
 	def get(self, url):
