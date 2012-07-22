@@ -216,6 +216,7 @@ def usage():
 	print("-s or --seed ... REQUIRED: specifies the seed URL to start the crawl from")
 	print("-f or --format ... OPTIONAL: sets output format, allowed values are 'plain' or 'json' - defaults to plain text format")
 	print("-p or --politeness ... OPTIONAL: sets the crawl frequency aka politeness - defaults to 0.1 sec between two subsequent requests at a site")
+	print("-d or --descend ... OPTIONAL: perform descend crawl, that is, only follow links to paths below seed URL, not up or same level")
 	print("-v or --verbose ... OPTIONAL: provide detailed logs of what is happening")
 
 # a very naive way to check if we have a valid seed URL
@@ -276,12 +277,12 @@ if __name__ == "__main__":
 				else:
 					print("The politeness value you have specified is not valid - use a positive float greater than %f as parameter." %float(MIN_POLITNESS))
 					sys.exit()
+			elif opt in ("-d", "--descend"): # perform descend crawl (only follow links to paths below seed URL, not up or same level)
+				descend = True
+				print("Selected crawl type: descend, that is, only follow links to paths below seed URL, not up or same level.")
 			elif opt in ("-v", "--verbose"): # provide detailed logs of what is happening
 				verbose = True
 				print("Selected level of reporting detail: verbose, that is, provide details of crawl status.")
-			elif opt in ("-d", "--descend"): # perform descend crawl (only follow links to pathes below seed URL, not up or same level)
-				descend = True
-				print("Selected crawl type: descend, that is, only follow links to paths below seed URL, not up or same level.")
 
 		# configure and run RCrawler
 		print("="*80)

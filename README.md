@@ -48,10 +48,11 @@ Racoon takes the following parameters as command line options:
 	-p or --politeness	...	OPTIONAL: sets the crawl frequency aka politeness, allowed are values greater MIN_POLITNESS 
 							(defaults to 0.1 sec between two subsequent requests at a site)
 
+	-d or --descend		... OPTIONAL: perform descend crawl, that is, only follow links to paths below seed URL, not up or same level
+
 	-v or --verbose		...	OPTIONAL: provide detailed logs of what is happening
 
 Note: if you know what you're doing, you can change the minimal allowed request frequency (aka politeness) in [`racoon.py`](https://github.com/mhausenblas/Racoon/blob/master/racoon.py) by changing `MIN_POLITNESS`.
-
 
 ## Local testing
 
