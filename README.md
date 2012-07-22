@@ -1,6 +1,6 @@
 #Racoon - dig up Open Data nuggets!
 
-The _r_apid-_a_ppraisal _c_rawler for _o_riginal _o_pen data _n_uggets (_Racoon_) is a targeted crawler and explorer for Open Data nuggets, typically hidden in government and corporate Web sites. Racoon takes a *seed URL* and crawl parameters (crawl strategy, frequency, output format, etc.) as input and produces a description of potential Open Data nuggets, that is, documents such as PDF, Excel sheets, etc. as output.
+The rapid-appraisal crawler for original open data nuggets - for short _Racoon_ -  is a targeted crawler and explorer for Open Data nuggets, typically hidden in government and corporate Web sites. Racoon takes a *seed URL* and crawl parameters (crawl strategy, frequency, output format, etc.) as input and produces a description of potential Open Data nuggets, that is, documents such as PDF, Excel sheets, etc. as output.
 
 The description of the identified Open Data nuggets is provided in JSON along with some crawl info (overall visited locations and locations with nuggets) and has the following structure:
 
