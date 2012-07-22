@@ -107,9 +107,9 @@ If you're under MacOS, which has a [built-in Apache](http://macdevcenter.com/pub
 
 ## Dependencies
 
-Racoon comes out of the box with everything you need. It has been tested under Python 2.6 and 2.7 and depends on [`BeautifulSoup`](http://www.crummy.com/software/BeautifulSoup/), which is included.
+Racoon comes out of the box with everything you need. It has been tested under Python 2.6 and 2.7 and depends on [BeautifulSoup](http://www.crummy.com/software/BeautifulSoup/), which is included.
 
-The (experimental) HTML+JavaScript [display](https://github.com/mhausenblas/Racoon/wiki/Display) of crawl results uses the [D3](http://d3js.org/) library.
+The (experimental) HTML+JavaScript [display](https://github.com/mhausenblas/Racoon/wiki/Display) of Racoon's crawl results uses the [D3](http://d3js.org/) library.
 
 ## License
 
