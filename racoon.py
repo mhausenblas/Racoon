@@ -41,6 +41,8 @@ LIMIT = -1 # visit only LIMIT pages - if you want to crawl without limits, set t
 HTML_CONTENT_TYPES = ['text/html', 'application/xhtml+xml'] # based on http://www.whatwg.org/specs/web-apps/current-work/multipage/iana.html
 EXCLUDED_URI_REFS = ['mailto', 'ftp']
 
+RACOON_AGENT = 'Racoon v0.1'
+
 class RCrawler(object):
 	# init with the base URL of the site and a default politness of 1s wait between two hits
 	def __init__(self, base, politeness = DEFAULT_POLITNESS, verbose = False):
@@ -78,7 +80,7 @@ class RCrawler(object):
 		# check if we're allowed to crawl the current location (as of robots.txt) and
 		# if we're not going in circles (by cheking seen locations) and 
 		# ignore URI schemes such as mailto: and ftp: - we only want HTTP URI
-		if self.rp.can_fetch("*", cur_loc) and cur_loc not in self.seen and not urlparse(cur_loc).scheme in EXCLUDED_URI_REFS: 
+		if self.rp.can_fetch(RACOON_AGENT, cur_loc) and cur_loc not in self.seen and not urlparse(cur_loc).scheme in EXCLUDED_URI_REFS: 
 			self.seen.append(cur_loc) # remember that we have already seen the current location
 			
 			# 1. fetch content from current location and try to determine content type (ct) and content length (cl):
@@ -125,6 +127,9 @@ class RCrawler(object):
 						self.breadth_first(urljoin(base_URL, link), limit)
 					else:
 						if self.verbose: logging.info('- ignoring outgoing link %s' %link)
+		elif not self.rp.can_fetch(RACOON_AGENT, cur_loc):
+			if self.verbose: logging.info('- skipping %s as I am not allowed to crawl it' %cur_loc)
+			return
 		elif cur_loc in self.seen:
 			if self.verbose: logging.info('- skipping %s as already seen it' %cur_loc)
 			return
@@ -160,7 +165,7 @@ class RCrawler(object):
 		try:
 			#response = urlopen(url)
 			req = Request(url)
-			req.add_header('User-agent', 'Racoon v0.1')
+			req.add_header('User-agent', RACOON_AGENT)
 			response = urlopen(req)
 		except HTTPError, e:
 			if DEBUG: logging.debug('Server could not fulfill the request to GET %s and responded with %s' %(url, e.code))
@@ -208,7 +213,6 @@ def usage():
 	print("-p or --politeness ... OPTIONAL: sets the crawl frequency aka politeness - defaults to 0.1 sec between two subsequent requests at a site")
 	print("-v or --verbose ... OPTIONAL: provide detailed logs of what is happening")
 
-
 # a very naive way to check if we have a valid seed URL
 def is_valid_seed(url):
 	if url and url.startswith("http://"): return True
@@ -218,6 +222,7 @@ def is_valid_seed(url):
 def is_valid_format(format):
 	if format in ( "plain", "json"): return True
 	else: return False
+
 # check if we have a valid limit
 def is_valid_limit(limit):
 	try:
@@ -271,7 +276,7 @@ if __name__ == "__main__":
 				(valid_limit, plimit) = is_valid_limit(arg)
 				if valid_limit:
 					limit = plimit
-					print("Selected crawl limit: %s" %limit)
+					print("Selected crawl limit: visit %s locations at maximum" %limit)
 				else:
 					print("The crawl limit you have specified is not valid - use a positive integer as parameter.")
 					sys.exit()
@@ -288,7 +293,10 @@ if __name__ == "__main__":
 
 		# configure and run RCrawler
 		print("="*80)
-		r = RCrawler(base = seed_url, politeness = politeness, verbose = verbose)
+		base = urlparse(seed_url)
+		base = ''.join([base.scheme, '://', base.netloc, '/'])
+		print("Using base URL %s" %base)
+		r = RCrawler(base = base, politeness = politeness, verbose = verbose)
 		cstats = r.crawl(seed_URL = seed_url, limit = limit)
 
 		print("="*80)
@@ -309,5 +317,3 @@ if __name__ == "__main__":
 		print str(err)
 		usage()
 		sys.exit(2)
-	
-	
