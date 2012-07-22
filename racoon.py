@@ -37,7 +37,6 @@ DEFAULT_POLITNESS = 0.2 # that is, wait 0.2 sec between two sub-sequent requests
 DEFAULT_FORMAT = 'plain' # output the plain object dump - 'json' outputs a valid JSON string instead
 MIN_POLITNESS = 0.05 # wait at least wait 50ms between two sub-sequent requests at a site - set it only lower when you know what you're doing
 
-LIMIT = -1 # visit only LIMIT pages - if you want to crawl without limits, set to -1
 HTML_CONTENT_TYPES = ['text/html', 'application/xhtml+xml'] # based on http://www.whatwg.org/specs/web-apps/current-work/multipage/iana.html
 EXCLUDED_URI_REFS = ['mailto', 'ftp']
 
@@ -56,16 +55,9 @@ class RCrawler(object):
 		self.verbose = verbose
 	
 	# crawl from a seed URL
-	def crawl(self, seed_URL, limit=LIMIT):
-		if limit > 0: # respect user defined crawl limit
-			if len(self.seen) <= LIMIT:
-				if self.verbose: logging.info('Overall link count currently is %s' %len(self.seen))
-				self.breadth_first(seed_URL, limit)
-			else: 
-				if self.verbose: logging.info('Hit limit at link count %s' %len(self.seen))
-				return
-		else: # crawl without limit
-			self.breadth_first(seed_URL)
+	def crawl(self, seed_URL, descend = False):
+		self.seed = seed_URL
+		self.breadth_first(self.seed, descend)
 		try:
 			return ('Crawl completed with %d locations seen in total and found nuggets in %d locations.' %(len(self.seen), len(self.nuggets)))
 		except:
@@ -76,7 +68,16 @@ class RCrawler(object):
 	# 2. extracts all links from current location
 	# 3. extract all nuggets from current location
 	# 4. ... and then recursively crawl remaining links within site
-	def breadth_first(self, cur_loc, limit = LIMIT):
+	def breadth_first(self, cur_loc, descend):
+		
+		# if descend crawl strategy has been selected, 
+		# make sure we don't bother inspecting URLs that are beyond the
+		# crawl scope (only paths below seed URL)
+		if descend:
+			if not cur_loc.startswith(self.seed):
+				if self.verbose: logging.info('The URL %s is beyond the crawl scope, retreating ...' %cur_loc)
+				return
+		
 		# check if we're allowed to crawl the current location (as of robots.txt) and
 		# if we're not going in circles (by cheking seen locations) and 
 		# ignore URI schemes such as mailto: and ftp: - we only want HTTP URI
@@ -124,7 +125,7 @@ class RCrawler(object):
 					# use only relative links to stay within the site by checking if it starts with 'http://'
 					if not link.startswith('http://'):
 						if self.verbose: logging.info('- considering relative link %s resolving to %s' %(link, urljoin(base_URL, link)))
-						self.breadth_first(urljoin(base_URL, link), limit)
+						self.breadth_first(urljoin(base_URL, link), descend)
 					else:
 						if self.verbose: logging.info('- ignoring outgoing link %s' %link)
 		elif not self.rp.can_fetch(RACOON_AGENT, cur_loc):
@@ -209,7 +210,6 @@ def usage():
 	print("Parameter:")
 	print("-s or --seed ... REQUIRED: specifies the seed URL to start the crawl from")
 	print("-f or --format ... OPTIONAL: sets output format, allowed values are 'plain' or 'json' - defaults to plain text format")
-	print("-l or --limit ... OPTIONAL: sets crawl limit, allowed are values >0 - defaults to no limits, that is, follow all available links within the website")
 	print("-p or --politeness ... OPTIONAL: sets the crawl frequency aka politeness - defaults to 0.1 sec between two subsequent requests at a site")
 	print("-v or --verbose ... OPTIONAL: provide detailed logs of what is happening")
 
@@ -222,15 +222,6 @@ def is_valid_seed(url):
 def is_valid_format(format):
 	if format in ( "plain", "json"): return True
 	else: return False
-
-# check if we have a valid limit
-def is_valid_limit(limit):
-	try:
-		limit = int(limit)
-		if limit > 0: return (True , limit)
-		else: return (False , 0)
-	except:
-		return (False , 0)
 
 # check if we have a valid politeness value
 def is_valid_politeness(politeness):
@@ -246,14 +237,14 @@ def is_valid_politeness(politeness):
 if __name__ == "__main__":
 	seed_url = ""
 	format = DEFAULT_FORMAT
-	limit = -1
 	politeness = DEFAULT_POLITNESS
 	verbose = False
+	descend = False
 	
 	try:
 		# extract and validate options and their arguments
 		print("="*80)
-		opts, args = getopt.getopt(sys.argv[1:], "hs:f:l:p:v", ["help", "seed", "format", "limit", "politeness", "verbose"])
+		opts, args = getopt.getopt(sys.argv[1:], "hs:f:p:vd", ["help", "seed", "format", "politeness", "verbose", "descend"])
 		for opt, arg in opts:
 			if opt in ("-h", "--help"):
 				usage()
@@ -272,14 +263,6 @@ if __name__ == "__main__":
 				else:
 					print("The output format you have specified is not valid - use either 'plain' or 'json' as parameter.")
 					sys.exit()
-			elif opt in ("-l", "--limit"): # sets crawl limit - optional, defaults to no limits, that is, follow all available links within the website
-				(valid_limit, plimit) = is_valid_limit(arg)
-				if valid_limit:
-					limit = plimit
-					print("Selected crawl limit: visit %s locations at maximum" %limit)
-				else:
-					print("The crawl limit you have specified is not valid - use a positive integer as parameter.")
-					sys.exit()
 			elif opt in ("-p", "--politeness"): # sets the crawl frequency aka politeness - optional, defaults to 0.1 sec between two subsequent requests at a site
 				(valid_politeness, ppoliteness) = is_valid_politeness(arg)
 				if valid_politeness:
@@ -290,6 +273,10 @@ if __name__ == "__main__":
 					sys.exit()
 			elif opt in ("-v", "--verbose"): # provide detailed logs of what is happening
 				verbose = True
+				print("Selected level of reporting detail: verbose, that is, provide details of crawl status.")
+			elif opt in ("-d", "--descend"): # perform descend crawl (only follow links to pathes below seed URL, not up or same level)
+				descend = True
+				print("Selected crawl type: descend, that is, only follow links to paths below seed URL, not up or same level.")
 
 		# configure and run RCrawler
 		print("="*80)
@@ -297,7 +284,7 @@ if __name__ == "__main__":
 		base = ''.join([base.scheme, '://', base.netloc, '/'])
 		print("Using base URL %s" %base)
 		r = RCrawler(base = base, politeness = politeness, verbose = verbose)
-		cstats = r.crawl(seed_URL = seed_url, limit = limit)
+		cstats = r.crawl(seed_URL = seed_url, descend = descend)
 
 		print("="*80)
 		print(cstats)

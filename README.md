@@ -2,7 +2,7 @@
 
 Racoon is a targeted crawler and explorer for open data that is typically hidden in government and corporate Web sites. 
 
-* INPUT: a seed URL and crawl parameters (crawl depth, limit, frequency, output format, etc.)
+* INPUT: a seed URL and crawl parameters (crawl depth, frequency, output format, etc.)
 * OUTPUT: description of target 'open data' documents such as PDF, Excel sheets, etc. in JSON as well as crawl info
 
 ## Usage
@@ -44,9 +44,6 @@ Racoon takes the following parameters as command line options:
 							(defaults to plain text format; when 'json' is selected it creates a
 							 valid JSON document in the current directory that reads something like
 							 'crawl-result-2012-07-21T18-48-33-406027.json')
-
-	-l or --limit		...	OPTIONAL: sets crawl limit, allowed are values greater 0
-							(defaults to no limits, that is, follow all available links within the website)
 
 	-p or --politeness	...	OPTIONAL: sets the crawl frequency aka politeness, allowed are values greater MIN_POLITNESS 
 							(defaults to 0.1 sec between two subsequent requests at a site)
