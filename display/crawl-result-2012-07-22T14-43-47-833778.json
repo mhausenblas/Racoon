@@ -1,0 +1,25 @@
+{
+	"http://localhost/racoon-test/sub-dir-1/p3.html": [{
+		"URL": "http://localhost/racoon-test/sub-dir-1/e.pdf",
+		"text": "document e",
+		"type": "application/pdf",
+		"size": "13055"
+	}],
+	"http://localhost/racoon-test/p1.html": [{
+		"URL": "http://localhost/racoon-test/d.pdf",
+		"text": "document d",
+		"type": "application/pdf",
+		"size": "13055"
+	}],
+	"http://localhost/racoon-test/p2.html": [{
+		"URL": "http://localhost/racoon-test/d.pdf",
+		"text": "document d",
+		"type": "application/pdf",
+		"size": "13055"
+	}, {
+		"URL": "http://localhost/racoon-test/c.pdf",
+		"text": "document c",
+		"type": "application/pdf",
+		"size": "13055"
+	}]
+}

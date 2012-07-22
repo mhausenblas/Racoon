@@ -1,0 +1,24 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Racoon - crawl result display</title>
+		<style type="text/css">
+		circle.node {
+		  stroke: #fff;
+		  stroke-width: 1.5px;
+		}
+
+		line.link {
+		  stroke: #999;
+		  stroke-opacity: .6;
+		}
+		</style>
+	</head>
+	<body>
+		<input type="text" id="rresult" placeholder="location of Racoon result file such as http://localhost/racoon-output/crawl-result-2012-07-22T14-43-47-833778.json" value="http://localhost/racoon-output/crawl-result-2012-07-22T14-43-47-833778.json" size="150" /> <button onclick="displayRR()">Display!</button>
+		<div id="output" style="margin: 20px"></div>
+		<script type="text/javascript" src="http://mbostock.github.com/d3/d3.v2.js?2.9.5"></script>
+		<script src="racoon-display.js"></script>
+	</body>
+</html>
