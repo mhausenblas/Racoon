@@ -92,6 +92,7 @@ class RCrawler(object):
 				logging.info('At URL %s with media type %s and %s bytes content length' %(cur_loc, ct, cl))
 				time.sleep(self.politeness)
 				(links, links_text) = self.extract_hyperlinks(cur_loc, content, limit)
+				baseURL = self.extract_base(content, cur_loc)
 				# first get all the nuggets from the current location
 				for link in links:
 					if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links 
@@ -117,7 +118,7 @@ class RCrawler(object):
 				# ... and now crawl the rest of the site-internal hyperlinks
 				for link in links:
 					if not link.startswith('http://'): # stay in the domain, only relative links, no outbound links
-						logging.info('- considering relative link %s resolving to %s' %(link, urljoin(host_loc, link)))
+						logging.info('- considering relative link %s resolving to %s' %(link, urljoin(baseURL, link)))
 						self.breadth_first(host_loc, urljoin(host_loc, link), links_text[link], limit)
 					else:
 						logging.info('- ignoring outgoing link %s' %link)
@@ -166,6 +167,14 @@ class RCrawler(object):
 				links.append(link['href'])
 				links_text[link['href']] = link.renderContents()
 		return (links, links_text)
+	
+	# extract base URL from an HTML content
+	def extract_base(self, content, cur_loc):
+		baseURL = cur_loc
+		for base in BeautifulSoup(content, parseOnlyThese=SoupStrainer('base')):
+			if base.has_key('href'):
+				baseURL = base['href']
+		return baseURL
 	
 	# extract all hyperlinks (<a href='' ...>) from an HTML content and follow them recursively
 	def follow_hyperlinks(self, host_loc, content, limit):
