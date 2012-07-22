@@ -1,6 +1,6 @@
 #!/bin/bash
 START=$(date +%s)
-python racoon.py -s $1 -f json -v
+python racoon.py -s $1 -f json -v -d
 END=$(date +%s)
 DIFF=$(( $END - $START ))
 echo "It took $DIFF seconds"

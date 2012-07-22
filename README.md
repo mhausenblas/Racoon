@@ -26,8 +26,8 @@ It is in general a good idea to use the `-d` parameter which activates the desce
 ... would only crawl locations below `http://example.com/start/sub/`, that is, Racoon would visit `http://example.com/start/sub/page1.html` but not `http://example.com/start/index.html`. When you first crawl a site (especially if it's not your own)  consider using this option in the first place as restricting the crawl increases the chances that you don't get banned ;)
 
 ### Examples
-At the wiki ...
 
+A number of [exemplary crawls](https://github.com/mhausenblas/Racoon/wiki/Example-crawls) are available via the project Wiki page, including the command used and the crawl result.
 
 ### Shell script
 
@@ -35,7 +35,9 @@ Under *nix you can also use the provided shell script [`rr`](https://github.com/
 
 	 ./rr  http://example.com/start/
 
-... which will store the crawl results in a file called something like `crawl-result-2012-07-21T18-48-33-406027.json` in the directory where you run the script as well as provide you with information about the overall execution time.
+... which will store the crawl results in a file called something like `crawl-result-2012-07-21T18-48-33-406027.json` in the directory where you run the script as well as provide you with information about the overall execution time. 
+
+Note: the script is configured to be verbose in nature and to use the descend crawl strategy.
 
 
 ## Crawl parameters
