@@ -19,7 +19,11 @@ You can also change the crawl frequency also known as politeness (that is, the t
 
 	python racoon.py -s http://example.com/start/ -f json -p 0.3 -v
 
+It is in general a good idea to use the `-d` parameter which activates the descending crawl strategy, meaning that Racoon only looks at paths that are below a given seed URL, so, for example:
 
+	python racoon.py -s http://example.com/start/sub/ -d
+
+... would only crawl locations below `http://example.com/start/sub/`, that is, Racoon would visit `http://example.com/start/sub/page1.html` but not `http://example.com/start/index.html`. When you first crawl a site (especially if it's not your own)  consider using this option in the first place as restricting the crawl increases the chances that you don't get banned ;)
 
 ### Examples
 At the wiki ...
